@@ -1,0 +1,39 @@
+const EXTENSION_HOST_PREFIXES = Object.freeze({
+  'extensions.turbowarp.org': 'turbowarp',
+  'potentiamod.github.io/pot-extensions': 'potentiamod',
+  'gaiawindwave90.github.io/gm-extensions': 'gaiamod' //Meep!
+});
+
+const getExtensionHostPrefix = (url) => {
+  if (url.protocol !== 'https:') {
+    return null;
+  }
+
+  const prefix = EXTENSION_HOST_PREFIXES[url.hostname];
+  return prefix === undefined ? null : prefix;
+};
+
+const getLocalExtensionPath = (url) => {
+  const prefix = getExtensionHostPrefix(url);
+  if (prefix === null) {
+    return null;
+  }
+
+  const pathname = url.pathname.replace(/^\/+/, '');
+  return prefix ? `${prefix}/${pathname}` : pathname;
+};
+
+const getLocalExtensionURL = (url) => {
+  const path = getLocalExtensionPath(url);
+  if (path === null) {
+    return null;
+  }
+
+  return `tw-extensions://./${path}${url.search}`;
+};
+
+module.exports = {
+  getExtensionHostPrefix,
+  getLocalExtensionPath,
+  getLocalExtensionURL
+};

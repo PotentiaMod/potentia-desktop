@@ -1,7 +1,6 @@
 const path = require('path');
 const zlib = require('zlib');
 const nodeURL = require('url');
-const settings = require('./settings');
 const {app, protocol, net} = require('electron');
 const {getDist, getPlatform} = require('./platform');
 const packageJSON = require('../package.json');
@@ -67,201 +66,9 @@ const FILE_SCHEMES = {
     defaultExtension: '.html',
     csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
   },
-  'pot-extensions': {
-    root: path.resolve(__dirname, '../dist-pot-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'nb-extensions': {
-    root: path.resolve(__dirname, '../dist-nb-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'ae-extensions': {
-    root: path.resolve(__dirname, '../dist-ae-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'ztengine-extensions': {
-    root: path.resolve(__dirname, '../dist-ztengine-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'bilup-extensions': {
-    root: path.resolve(__dirname, '../dist-bilup-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'dash-extensions': {
-    root: path.resolve(__dirname, '../dist-dash-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'mw-extensions': {
-    root: path.resolve(__dirname, '../dist-mw-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'ccw-extensions': {
-    root: path.resolve(__dirname, '../dist-ccw-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'sp-extensions': {
-    root: path.resolve(__dirname, '../dist-sp-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'pm-extensions': {
-    root: path.resolve(__dirname, '../dist-pm-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'dm-extensions': {
-    root: path.resolve(__dirname, '../dist-dm-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'sn-extensions': {
-    root: path.resolve(__dirname, '../dist-sn-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'ark-extensions': {
-    root: path.resolve(__dirname, '../dist-ark-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'em-extensions': {
-    root: path.resolve(__dirname, '../dist-em-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'gm-extensions': {
-    root: path.resolve(__dirname, '../dist-gm-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
-  'other-extensions': {
-    root: path.resolve(__dirname, '../dist-other-extensions'),
-    standard: true,
-    supportFetch: true,
-    cors: true,
-    brotli: true,
-    embeddable: true,
-    stream: true,
-    directoryIndex: 'index.html',
-    defaultExtension: '.html',
-    csp: "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
-  },
   'tw-update': {
     root: path.resolve(__dirname, '../src-renderer/update'),
-    csp: "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https://potentiamod.github.io/pot-desktop.html"
+    csp: "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https://potentiamod.github.io/desktop.html"
   },
   'tw-security-prompt': {
     root: path.resolve(__dirname, '../src-renderer/security-prompt'),
@@ -352,7 +159,7 @@ const createErrorPageHTML = (request, errorMessage) => `<!DOCTYPE html>
   </head>
   <body bgcolor="white" text="black">
     <h1>Protocol handler error</h1>
-    <p>If you can see this page, <a href="https://github.com/PotentiaMod/desktop/issues" target="_blank" rel="noreferrer">please open a GitHub issue</a> or <a href="mailto:crystalfranks18@hotmail.com" target="_blank" rel="noreferrer">email us</a> with all the information below.</p>
+    <p>If you can see this page, <a href="https://github.com/PotentiaMod/potentia-desktop/issues" target="_blank" rel="noreferrer">please open a GitHub issue</a> or <a href="mailto:crystalfranks18@hotmail.com" target="_blank" rel="noreferrer">email us</a> with all the information below.</p>
     <pre>${escapeXML(errorMessage)}</pre>
     <pre>URL: ${escapeXML(request.url)}</pre>
     <pre>Version ${escapeXML(packageJSON.version)}, Electron ${escapeXML(process.versions.electron)}, Platform ${escapeXML(getPlatform())} ${escapeXML(process.arch)}, Distribution ${escapeXML(getDist())}</pre>
