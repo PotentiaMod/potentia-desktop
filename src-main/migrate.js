@@ -28,7 +28,7 @@ const writeCurrentVersion = async () => {
 };
 
 const openUpdatePage = () => {
-  openExternal('https://potentiamod.github.io/online/pot-desktop.html');
+  openExternal('https://potentiamod.github.io/desktop.html');
 };
 
 /**
@@ -143,7 +143,7 @@ const migrate = async () => {
       message: translate('downgrade-warning.title'),
       detail: translate('downgrade-warning.message')
         .replace('{APP_NAME}', APP_NAME)
-        .replace('{website}', 'desktop.turbowarp.org')
+        .replace('{website}', 'potentiamod.github.io/desktop.html')
         .replace('{debugInfo}', changes.join(', ')),
       buttons: [
         translate('downgrade-warning.exit'),
