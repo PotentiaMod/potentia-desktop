@@ -1,6 +1,6 @@
 {
   "name": "potentiamod-desktop",
-  "description": "PotentiaMod mod with a new themes, new features and more!",
+  "description": "TurboWarp mod with a new themes, new features and more!",
   "version": "1.2.5",
   "license": "GPL-3.0",
   "author": {
@@ -158,7 +158,7 @@
       "artifactName": "${productName}-${os}-${arch}-${version}.${ext}",
       "icon": "./build/",
       "synopsis": "Mod of Scratch with a compiler and more features.",
-      "description": "PotentiaMod is a Scratch mod with a compiler to run projects faster, dark mode for your eyes, a bunch of addons to improve the editor, and more.",
+      "description": "PotentiaMod is a TurboWarp mod with a compiler to run projects faster, dark mode for your eyes, a bunch of addons to improve the editor, and more.",
       "category": "Development",
       "desktop": {
         "entry": {
@@ -182,7 +182,7 @@
       ]
     },
     "snap": {
-      "summary": "PotentiaMod mod with a new themes, new features and more!",
+      "summary": "TurboWarp mod with a new themes, new features and more!",
       "allowNativeWayland": true,
       "plugs": [
         "default",
