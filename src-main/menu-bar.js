@@ -142,7 +142,7 @@ const rebuildMenuBar = () => {
           {
             label: translate('menu.learn-more'),
             click: () => {
-              openExternal('https://potentiamod.github.io/online/pot-desktop.html')
+              openExternal('https://potentiamod.github.io/desktop.html')
             }
           }
         ]
