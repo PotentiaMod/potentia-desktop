@@ -1,5 +1,4 @@
-const fs = require('fs');
-const fsPromises = fs.promises;
+const fsPromises = require('fs/promises');
 const path = require('path');
 const nodeURL = require('url');
 const zlib = require('zlib');
@@ -20,21 +19,16 @@ const privilegedFetch = require('../fetch');
 const RichPresence = require('../rich-presence.js');
 const FileAccessWindow = require('./file-access-window.js');
 const ExtensionDocumentationWindow = require('./extension-documentation.js');
-const gitService = require('../git-service');
-const gitProject = require('../git-project');
-const SecurityPromptWindow = require('./security-prompt.js');
 const {getExtensionHostPrefix, getLocalExtensionPath} = require('../extension-host');
 
 const TYPE_FILE = 'file';
 const TYPE_URL = 'url';
 const TYPE_SCRATCH = 'scratch';
 const TYPE_SAMPLE = 'sample';
-const TYPE_GIT_PROJECT = 'git-project';
-
 
 class OpenedFile {
   constructor (type, path) {
-    /** @type {TYPE_FILE|TYPE_URL|TYPE_SCRATCH|TYPE_SAMPLE|TYPE_GIT_PROJECT} */
+    /** @type {TYPE_FILE|TYPE_URL|TYPE_SCRATCH|TYPE_SAMPLE} */
     this.type = type;
 
     /**
@@ -98,25 +92,9 @@ class OpenedFile {
       throw new Error('Unsafe join');
     }
 
-    if (this.type === TYPE_GIT_PROJECT) {
-      return readGitProject(this.path);
-    }
-
     throw new Error(`Unknown type: ${this.type}`);
   }
 }
-
-const parseLocalPath = (file, workingDirectory) => {
-  const resolvedPath = path.resolve(workingDirectory || process.cwd(), file);
-  try {
-    if (fs.statSync(resolvedPath).isDirectory()) {
-      return new OpenedFile(TYPE_GIT_PROJECT, resolvedPath);
-    }
-  } catch (e) {
-    // Let the normal file-loading path report missing and inaccessible paths.
-  }
-  return new OpenedFile(TYPE_FILE, resolvedPath);
-};
 
 /**
  * @param {string} file
@@ -162,7 +140,7 @@ const parseOpenedFile = (file, workingDirectory) => {
       }
 
       if (filePath) {
-        return parseLocalPath(filePath, workingDirectory);
+        return new OpenedFile(TYPE_FILE, path.resolve(workingDirectory, filePath));
       }
     }
 
@@ -170,29 +148,7 @@ const parseOpenedFile = (file, workingDirectory) => {
     // Windows paths look close enough to real URLs to be parsed successfully.
   }
 
-  return parseLocalPath(file, workingDirectory);
-};
-
-const registerResultHandler = (ipc, channel, operation, formatResult = () => ({})) => {
-  ipc.handle(channel, async (_event, ...args) => {
-    try {
-      return {
-        success: true,
-        ...formatResult(await operation(...args))
-      };
-    } catch (error) {
-      return {success: false, error: error instanceof Error ? error.message : String(error)};
-    }
-  });
-};
-
-const readGitProject = async selectedPath => {
-  const projectPath = await gitService.resolveRepository(selectedPath);
-  return {
-    name: path.basename(projectPath),
-    data: await gitProject.readProject(projectPath),
-    projectPath
-  };
+  return new OpenedFile(TYPE_FILE, path.resolve(workingDirectory, file));
 };
 
 /**
@@ -215,16 +171,6 @@ const getUnsafePaths = () => {
     {
       path: app.getPath('userData'),
       app: APP_NAME,
-    },
-
-    // Desktop fefaults
-    {
-      path: path.join(appData, 'potentiamod-desktop'),
-      app: 'PotentiaMod Desktop'
-    },
-    {
-      path: path.join(localPrograms, 'PotentiaMod'),
-      app: 'PotentiaMod Desktop'
     },
 
     // TurboWarp Desktop defaults
@@ -271,12 +217,9 @@ class EditorWindow extends ProjectRunningWindow {
   /**
    * @param {OpenedFile|null} initialFile
    * @param {boolean} isInitiallyFullscreen
-   * @param {boolean} nodeIntegration
    */
-  constructor (initialFile, isInitiallyFullscreen, nodeIntegration) {
-    super({
-      nodeIntegration
-    });
+  constructor (initialFile, isInitiallyFullscreen) {
+    super();
 
     /**
      * Ideally we would revoke access after loading a new project, but our file handle handling in
@@ -343,20 +286,19 @@ class EditorWindow extends ProjectRunningWindow {
       });
     });
 
-    const titlePrefix = nodeIntegration ? `[${translate('node-integration.prefix')}] ` : '';
     this.window.on('page-title-updated', (event, title, explicitSet) => {
       event.preventDefault();
       if (explicitSet && title) {
-        this.window.setTitle(`${titlePrefix}${title} - ${APP_NAME}`);
+        this.window.setTitle(`${title} - ${APP_NAME}`);
         this.projectTitle = title;
       } else {
-        this.window.setTitle(`${titlePrefix}${APP_NAME}`);
+        this.window.setTitle(APP_NAME);
         this.projectTitle = '';
       }
 
       this.updateRichPresence();
     });
-    this.window.setTitle(`${titlePrefix}${APP_NAME}`);
+    this.window.setTitle(APP_NAME);
 
     this.window.on('focus', () => {
       this.updateRichPresence();
@@ -372,12 +314,11 @@ class EditorWindow extends ProjectRunningWindow {
 
     this.ipc.handle('get-file', async (event, id) => {
       const file = getFileById(id);
-      const {name, data, projectPath} = await file.read();
+      const {name, data} = await file.read();
       return {
         name,
         type: file.type,
-        data,
-        projectPath
+        data
       };
     });
 
@@ -442,26 +383,6 @@ class EditorWindow extends ProjectRunningWindow {
       return {
         id,
         name: path.basename(filePath)
-      };
-    });
-
-    this.ipc.handle('show-open-directory-picker', async () => {
-      const result = await dialog.showOpenDialog(this.window, {
-        properties: ['openDirectory', 'createDirectory'],
-        defaultPath: settings.lastDirectory
-      });
-
-      if (result.canceled) {
-        return null;
-      }
-
-      const directoryPath = result.filePaths[0];
-      settings.lastDirectory = directoryPath;
-      await settings.save();
-
-      return {
-        name: path.basename(directoryPath),
-        path: directoryPath
       };
     });
 
@@ -605,7 +526,7 @@ class EditorWindow extends ProjectRunningWindow {
     });
 
     this.ipc.handle('open-new-window', () => {
-      EditorWindow.newWindow(null, false, false);
+      EditorWindow.newWindow();
     });
 
     this.ipc.handle('open-addon-settings', (event, search) => {
@@ -642,52 +563,6 @@ class EditorWindow extends ProjectRunningWindow {
     this.ipc.handle('check-drag-and-drop-path', (event, filePath) => {
       FileAccessWindow.check(filePath);
     });
-
-    this.ipc.handle('git-is-available', () => gitService.isGitAvailable());
-    registerResultHandler(this.ipc, 'git-status', repoPath => gitService.status(repoPath), data => ({data}));
-    registerResultHandler(this.ipc, 'git-init', (repoPath, branchName) => gitService.init(repoPath, branchName));
-    registerResultHandler(this.ipc, 'git-add', (repoPath, files) => gitService.add(repoPath, files));
-    registerResultHandler(this.ipc, 'git-reset', (repoPath, files) => gitService.reset(repoPath, files));
-    registerResultHandler(this.ipc, 'git-commit', (repoPath, message) => gitService.commit(repoPath, message));
-    registerResultHandler(this.ipc, 'git-log', (repoPath, maxCount) => gitService.log(repoPath, maxCount),
-      commits => ({commits}));
-    registerResultHandler(this.ipc, 'git-list-branches', repoPath => gitService.listBranches(repoPath),
-      branches => ({branches}));
-    registerResultHandler(this.ipc, 'git-fetch', (repoPath, remote) => gitService.fetch(repoPath, remote));
-    registerResultHandler(this.ipc, 'git-create-branch', (repoPath, branchName) =>
-      gitService.createBranch(repoPath, branchName));
-    registerResultHandler(this.ipc, 'git-switch-branch', (repoPath, branchName) =>
-      gitService.switchBranch(repoPath, branchName));
-    registerResultHandler(this.ipc, 'git-push', (repoPath, remote, branch) =>
-      gitService.push(repoPath, remote, branch));
-    registerResultHandler(this.ipc, 'git-pull', (repoPath, remote, branch) =>
-      gitService.pull(repoPath, remote, branch));
-    registerResultHandler(this.ipc, 'git-discard', (repoPath, filePath, originalPath) =>
-      gitService.discard(repoPath, filePath, originalPath), result => result);
-    registerResultHandler(this.ipc, 'git-remotes', repoPath => gitService.remotes(repoPath),
-      remotes => ({remotes}));
-    registerResultHandler(this.ipc, 'git-rename-branch', (repoPath, branch, newName) =>
-      gitService.renameBranch(repoPath, branch, newName));
-    registerResultHandler(this.ipc, 'git-delete-branch', (repoPath, branch) =>
-      gitService.deleteBranch(repoPath, branch));
-    registerResultHandler(this.ipc, 'git-revert-to-commit', (repoPath, commitHash) =>
-      gitService.revertToCommit(repoPath, commitHash));
-    registerResultHandler(this.ipc, 'git-add-remote', (repoPath, name, url) =>
-      gitService.addRemote(repoPath, name, url));
-    registerResultHandler(this.ipc, 'git-remove-remote', (repoPath, name) =>
-      gitService.removeRemote(repoPath, name));
-    registerResultHandler(this.ipc, 'git-merge', (repoPath, branch, targetBranch) =>
-      gitService.merge(repoPath, branch, targetBranch));
-    registerResultHandler(this.ipc, 'git-read-readme', repoPath => gitService.readReadme(repoPath),
-      contents => ({contents}));
-    registerResultHandler(this.ipc, 'git-write-readme', (repoPath, contents) =>
-      gitService.writeReadme(repoPath, contents));
-    registerResultHandler(this.ipc, 'git-project-diff', (repoPath, filePath, staged, originalPath) =>
-      gitService.projectDiff(repoPath, filePath, staged, originalPath), data => ({data}));
-    registerResultHandler(this.ipc, 'git-sync-project', (repoPath, archive, workspaceXML) =>
-      gitProject.syncProject(repoPath, archive, workspaceXML));
-    registerResultHandler(this.ipc, 'git-read-project', readGitProject,
-      result => ({data: result.data, repositoryRoot: result.projectPath}));
 
     /**
      * Refers to the full screen button in the editor, not the OS-level fullscreen through
@@ -749,7 +624,7 @@ class EditorWindow extends ProjectRunningWindow {
       const projectUrl = params.get('project_url');
       const parsedFile = parseOpenedFile(projectUrl, null);
       if (parsedFile.type === TYPE_SAMPLE) {
-        EditorWindow.newWindow(parsedFile, false, false);
+        new EditorWindow(parsedFile, null);
         return {
           action: 'deny'
         };
@@ -779,36 +654,26 @@ class EditorWindow extends ProjectRunningWindow {
   }
 
   /**
-   * @param {string[]} paths
+   * @param {string[]} files
    * @param {boolean} fullscreen
-   * @param {boolean} nodeIntegration
    * @param {string|null} workingDirectory
-   * @returns {Promise<void>}
    */
-  static openPaths (paths, fullscreen, nodeIntegration, workingDirectory) {
-    if (paths.length === 0) {
-      return EditorWindow.newWindow(null, fullscreen, nodeIntegration);
+  static openFiles (files, fullscreen, workingDirectory) {
+    if (files.length === 0) {
+      EditorWindow.newWindow(fullscreen);
+    } else {
+      for (const file of files) {
+        new EditorWindow(parseOpenedFile(file, workingDirectory), fullscreen);
+      }
     }
-    return Promise.all(paths.map(path => (
-      EditorWindow.newWindow(parseOpenedFile(path, workingDirectory), fullscreen, nodeIntegration)
-    )));
   }
 
   /**
-   * Try to open a new window.
-   * @param {OpenedFile|null} file
+   * Open a new window with the default project.
    * @param {boolean} fullscreen
-   * @param {boolean} nodeIntegration
-   * @returns {Promise<void>}
    */
-  static async newWindow (file, fullscreen, nodeIntegration) {
-    if (nodeIntegration) {
-      const allowed = await SecurityPromptWindow.requestNodeIntegration();
-      if (!allowed) {
-        return;
-      }
-    }
-    new EditorWindow(file, fullscreen, nodeIntegration);
+  static newWindow (fullscreen) {
+    new EditorWindow(null, fullscreen);
   }
 }
 
