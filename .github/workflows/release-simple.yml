@@ -82,6 +82,9 @@ jobs:
       run: |
         npm config set cache D:\npm-cache
         npm config set prefix D:\npm-prefix
+    - name: Clean out
+      working-directory: D:\repo
+      run: npm cache clean --force
     - name: Install dependencies
       working-directory: D:\repo
       run: npm install --legacy-peer-deps
